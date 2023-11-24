@@ -15,11 +15,11 @@ Either import and use the `generate(parser: ArgumentParser)` function or directl
 
 ```python
 from argparse import ArgumentParser
-from shell_complete.argparse import ActionGenerate  # note: currently not available
+from shell_complete.argparse import ActionShellComplete  # note: currently not available
 
 parser = ArgumentParser()
 ...
-parser.add_argument('--completion', action=ActionGenerate,
+parser.add_argument('--completion', action=ActionShellComplete,
                     help="Generate a bash-completion-script")
 ```
 
