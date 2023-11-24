@@ -3,6 +3,12 @@ python package to generate shell-completion for your CLI
 
 > Warning: This project is in the earliest phase possible
 
+## Installation
+
+```bash
+pip3 install shell-complete
+```
+
 ## Usage
 
 Either import and use the `generate(parser: ArgumentParser)` function or directly the `ActionGenerate`
