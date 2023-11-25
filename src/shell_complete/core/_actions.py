@@ -4,7 +4,6 @@ r"""
 """
 # noinspection PyUnresolvedReferences,PyProtectedMember
 from argparse import (
-    BooleanOptionalAction,
     _StoreAction as StoreAction,
     _StoreConstAction as StoreConstAction,
     _StoreTrueAction as StoreTrueAction,
@@ -17,6 +16,10 @@ from argparse import (
     _SubParsersAction as SubParsersAction,
     _ExtendAction as ExtendAction,
 )
+try:
+    from argparse import BooleanOptionalAction as BooleanOptionalAction
+except ImportError:
+    BooleanOptionalAction = object()
 
 # noinspection PyProtectedMember
 ChoicesPseudoAction = SubParsersAction._ChoicesPseudoAction
@@ -25,6 +28,7 @@ ChoicesPseudoAction = SubParsersAction._ChoicesPseudoAction
 __all__ = [
     'BooleanOptionalAction',
     'StoreAction',
+    'StoreConstAction',
     'StoreTrueAction',
     'StoreFalseAction',
     'AppendAction',
@@ -33,5 +37,6 @@ __all__ = [
     'HelpAction',
     'VersionAction',
     'SubParsersAction',
+    'ChoicesPseudoAction',
     'ExtendAction',
 ]
