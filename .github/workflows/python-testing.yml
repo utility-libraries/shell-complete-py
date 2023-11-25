@@ -34,7 +34,7 @@ jobs:
         flake8 src/ --count --exit-zero --per-file-ignores __init__.py:F401 --max-complexity=10 --max-line-length=127 --statistics
     - name: Import with ${{ matrix.python-version }}
       run: |
-        echo 'PYTHONPATH="src/:$PYTHONPATH"' >> $GITHUB_ENV
+        PYTHONPATH="src/:$PYTHONPATH"
         # see if it can be importet
         python -c 'import shell_complete'
         # see if it can be executed
