@@ -14,8 +14,12 @@ from argparse import (
     _HelpAction as HelpAction,
     _VersionAction as VersionAction,
     _SubParsersAction as SubParsersAction,
-    _ExtendAction as ExtendAction,
 )
+try:
+    # noinspection PyUnresolvedReferences,PyProtectedMember
+    from argparse import _ExtendAction as ExtendAction
+except ImportError:
+    ExtendAction = object()
 try:
     from argparse import BooleanOptionalAction as BooleanOptionalAction
 except ImportError:
