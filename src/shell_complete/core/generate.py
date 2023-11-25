@@ -2,9 +2,13 @@
 r"""
 
 """
+import io
 import argparse as ap
-from ._actions import *
 
 
 def generate(parser: ap.ArgumentParser) -> str:
-    pass
+    stream = io.StringIO()
+    write = stream.write
+    write("#!/usr/bin/env bash")
+
+    return stream.getvalue()
