@@ -11,5 +11,6 @@ __all__ = ['generate']
 
 def generate(parser: ap.ArgumentParser, program: str) -> str:
     writer = BashWriter(program)
-
+    with writer:
+        pass
     return str(writer)
