@@ -19,17 +19,18 @@ class ActionShellComplete(ap.Action):
     r"""
     $ myprog --completion [{print,install,uninstall}]
     """
+    __parser: ap.ArgumentParser
 
     # noinspection PyShadowingBuiltins
-    def __init__(self, option_strings, dest, help=None, program: str = None):
+    def __init__(self, option_strings, dest, help=None, required: bool = False):
         super().__init__(
             option_strings,
             dest=ap.SUPPRESS,
             nargs=ap.OPTIONAL,
             choices=["print", "install", "uninstall"],
             help=help,
+            required=required,
         )
-        self.program = program
 
     # ---------------------------------------------------------------------------------------------------------------- #
 
@@ -45,7 +46,7 @@ class ActionShellComplete(ap.Action):
     def bash_complete_file(self) -> str:
         return p.abspath(
             p.expanduser(
-                p.join(self.bash_completion_dir, f"{self.program}.completion.bash")
+                p.join(self.bash_completion_dir, f"{self.__parser.prog}.completion.bash")
             )
         )
 
@@ -67,7 +68,7 @@ class ActionShellComplete(ap.Action):
         os.makedirs(self.bash_completion_dir, exist_ok=True)
 
     def generate_completion_file(self, parser: ap.ArgumentParser):
-        content = generate(parser, program=self.program)
+        content = generate(parser)
         with open(self.bash_complete_file, 'w') as file:
             file.write(content)
 
@@ -94,8 +95,9 @@ class ActionShellComplete(ap.Action):
                     print(line, end='')
 
     def __call__(self, parser: ap.ArgumentParser, ns: ap.Namespace, value: t.Optional[str], opt: str = None):
+        self.__parser = parser
         if value in {None, "print"}:
-            print(generate(parser=parser, program=self.program))
+            print(generate(parser=parser))
         elif value == "install":
             self.ensure_completion_root()
             self.generate_completion_file(parser=parser)
