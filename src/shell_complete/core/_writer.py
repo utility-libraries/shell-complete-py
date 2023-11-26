@@ -14,8 +14,9 @@ __all__ = ['BashWriter', 'quote']
 
 
 class BashWriter:
-    def __init__(self, program: str):
+    def __init__(self, program: str, smart: bool):
         self._program = program
+        self._smart = smart
         self._indentation = 0
         self._stream = io.StringIO()
 
@@ -32,15 +33,12 @@ class BashWriter:
         return self._stream.getvalue()
 
     def __call__(self, *parts, sep=" ", end="\n"):
-        self._stream.write(('  ' * self._indentation) + sep.join(parts) + end)
-
-    @contextlib.contextmanager
-    def indent(self) -> t.ContextManager:
-        self._indentation += 1
-        try:
-            yield
-        finally:
-            self._indentation -= 1
+        if any('\n' in part for part in parts):
+            lines = sep.join(parts).splitlines(keepends=False)
+            for line in lines:
+                self._stream.write(('  ' * self._indentation) + textwrap.dedent(line) + end)
+        else:
+            self._stream.write(('  ' * self._indentation) + textwrap.dedent(' '.join(parts)) + end)
 
     def __enter__(self):
         # adds the head
@@ -52,17 +50,27 @@ class BashWriter:
             "https://github.com/utility-libraries/shell-complete-py",
         )
         self()
-        self('if ! command -v', self._program, '&> /dev/null; then')
-        with self.indent():
-            self('return')
-        self('fi')
-        self()
+        if self._smart:
+            self('if ! command -v', self._program, '&> /dev/null; then')
+            with self.indent():
+                self('return')
+            self('fi')
+            self()
         self(self._complete_function, '() {')
         self._indentation += 1
         self('local CURRENT=${COMP_WORDS[$COMP_CWORD]}')
         self('local LAST=${COMP_WORDS[$((COMP_CWORD - 1))]}')
         self('local LINE=${COMP_LINE}')
+        self('local cur="$CURRENT"')
         self()
+
+    @contextlib.contextmanager
+    def indent(self) -> t.ContextManager:
+        self._indentation += 1
+        try:
+            yield
+        finally:
+            self._indentation -= 1
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # adds the tail
