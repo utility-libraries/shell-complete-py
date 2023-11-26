@@ -10,17 +10,25 @@ __all__ = ['generate']
 
 
 def generate(parser: ap.ArgumentParser) -> str:
-    writer = BashWriter(program=parser.prog)
+    r"""
+    :param parser: the parser to convert to a .completion.bash script
+    :return: .completion.bash script
+    """
+    writer = BashWriter(program=parser.prog, smart=True)
     with writer:
-
         # noinspection PyProtectedMember
         actions = parser._actions
 
         with writer.switch('"$LAST"'):
             for action in actions:
+                if not action.option_strings:
+                    continue
                 if action.choices:
                     with writer.case(*map(quote, action.option_strings)):
-                        writer.complete(*action.choices, word='"$LAST"')
+                        writer.complete(*action.choices, word='"$CURRENT"')
+                elif hasattr(action.type, '__completion__'):
+                    with writer.case(*map(quote, action.option_strings)):
+                        writer(action.type.__completion__)
             with writer.case("*"):
                 writer.complete(
                     *(
