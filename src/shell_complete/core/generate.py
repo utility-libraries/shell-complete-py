@@ -6,7 +6,10 @@ import argparse as ap
 from ._writer import BashWriter
 
 
-def generate(parser: ap.ArgumentParser) -> str:
-    writer = BashWriter()
+__all__ = ['generate']
+
+
+def generate(parser: ap.ArgumentParser, program: str) -> str:
+    writer = BashWriter(program)
 
     return str(writer)

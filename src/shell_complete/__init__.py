@@ -34,5 +34,5 @@ __description__ = "python package to generate shell-completion for your CLI"
 __version_info__ = (0, 0, 0)
 __version__ = '.'.join(map(str, __version_info__))
 
-from .core import generate
-from .argparse import ActionShellComplete
+from .core import *
+from .argparse import *

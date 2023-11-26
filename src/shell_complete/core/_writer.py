@@ -6,7 +6,8 @@ import io
 
 
 class BashWriter:
-    def __init__(self):
+    def __init__(self, program: str):
+        self._program = program
         self.stream = io.StringIO()
         self.indentation = 0
         self("#!/usr/bin/env bash")
