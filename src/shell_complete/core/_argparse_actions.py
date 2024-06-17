@@ -16,9 +16,14 @@ from argparse import (
     _HelpAction as HelpAction,
     _VersionAction as VersionAction,
     _SubParsersAction as SubParsersAction,
-    _ExtendAction as ExtendAction,
     BooleanOptionalAction,
 )
+try:
+    # noinspection PyUnresolvedReferences,PyProtectedMember
+    from argparse import _ExtendAction as ExtendAction  # added in 3.9
+except ImportError:
+    class ExtendAction:  # pseudo-class
+        pass
 
 StoreAction: t.Type[Action]
 StoreConstAction: t.Type[Action]
