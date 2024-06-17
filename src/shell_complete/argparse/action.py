@@ -21,7 +21,7 @@ class ActionShellComplete(ap.Action):
     """
     __parser: ap.ArgumentParser
 
-    # noinspection PyShadowingBuiltins
+    # noinspection PyShadowingBuiltins,PyUnusedLocal
     def __init__(self, option_strings, dest, help=None, required: bool = False):
         super().__init__(
             option_strings,
@@ -64,7 +64,7 @@ class ActionShellComplete(ap.Action):
 
     # ---------------------------------------------------------------------------------------------------------------- #
 
-    def ensure_completion_root(self):
+    def ensure_completion_dir_exists(self):
         os.makedirs(self.bash_completion_dir, exist_ok=True)
 
     def generate_completion_file(self, parser: ap.ArgumentParser):
@@ -72,7 +72,7 @@ class ActionShellComplete(ap.Action):
         with open(self.bash_complete_file, 'w') as file:
             file.write(content)
 
-    def install_loading(self):
+    def install_loading_line(self):
         last_line_is_empty = False
         with open(self.bashrc_file, 'r+') as file:
             for line in file:
@@ -88,7 +88,7 @@ class ActionShellComplete(ap.Action):
         if p.isfile(self.bash_complete_file):
             os.remove(self.bash_complete_file)
 
-    def remove_loading(self):
+    def remove_loading_line(self):
         with fileinput.FileInput(self.bashrc_file, inplace=True) as file:
             for line in file:
                 if line != self.load_line:
@@ -99,12 +99,12 @@ class ActionShellComplete(ap.Action):
         if value in {None, "print"}:
             print(generate(parser=parser))
         elif value == "install":
-            self.ensure_completion_root()
+            self.ensure_completion_dir_exists()
             self.generate_completion_file(parser=parser)
-            self.install_loading()
+            self.install_loading_line()
         elif value == "uninstall":
             self.remove_completion_file()
-            self.remove_loading()
+            self.remove_loading_line()
         else:
             raise ValueError(f"unknown option {value!r} ({'|'.join(self.choices)})")
         parser.exit()
