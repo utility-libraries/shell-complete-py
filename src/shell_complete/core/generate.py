@@ -2,11 +2,21 @@
 r"""
 
 """
+import re
 import argparse as ap
-from ._writer import BashWriter, quote
+from shlex import quote
+from .writing import ShellWriter
+from .. import __version__
+from . import _argparse_actions as ap_actions
 
 
 __all__ = ['generate']
+
+
+HAVE_VALUE_ACTIONS = (ap_actions.StoreAction, ap_actions.AppendAction, ap_actions.ExtendAction)
+HAVE_NO_VALUE_ACTIONS = (ap_actions.StoreConstAction, ap_actions.StoreTrueAction, ap_actions.StoreFalseAction,
+                         ap_actions.AppendConstAction, ap_actions.CountAction, ap_actions.HelpAction,
+                         ap_actions.VersionAction, ap_actions.BooleanOptionalAction)
 
 
 def generate(parser: ap.ArgumentParser) -> str:
@@ -14,31 +24,162 @@ def generate(parser: ap.ArgumentParser) -> str:
     :param parser: the parser to convert to a .completion.bash script
     :return: .completion.bash script
     """
-    writer = BashWriter(program=parser.prog, smart=True)
-    with writer:
+    root_parser = parser
+    writer = ShellWriter()
+
+    # head ---------------------------------------------------------------------
+    writer.comment_block(
+        f"= Generated with shell-complete {__version__}",
+        "-----",
+        f"https://pypi.org/project/shell-complete/{__version__}",
+        "https://github.com/utility-libraries/shell-complete-py",
+        "=====",
+        f"= {parser.prog}",
+        parser.description.strip(),
+    )
+    writer.write()
+    # only completion if command exist -----------------------------------------
+    writer.comment("only register autocompletion if the command actually exists")
+    writer.write('if ! command -v', root_parser.prog, '&> /dev/null; then')
+    with writer.indent():
+        writer.write('return')
+    writer.write('fi')
+    writer.write()
+    # prevent idiot execution --------------------------------------------------
+    writer.comment("prevent execution of this script as it has to be sourced")
+    writer.write('if [[ -n $ZSH_VERSION && $ZSH_EVAL_CONTEXT =~ :file$ ]]'
+                 ' || [[ -n $BASH_VERSION ]] && (return 0 2>/dev/null); then')
+    with writer.indent():
+        writer.write('echo "\'source ${BASH_SOURCE[0]}\' is the correct usage"')
+        writer.write('return')
+    writer.write('fi')
+    writer.write()
+
+    parser_queue = [root_parser]
+
+    while parser_queue:
+        parser = parser_queue.pop(0)
         # noinspection PyProtectedMember
         actions = parser._actions
 
-        with writer.switch('"$LAST"'):
-            for action in actions:
-                if not action.option_strings:
-                    continue
-                if action.choices:
-                    with writer.case(*map(quote, action.option_strings)):
-                        writer.complete(*action.choices, word='"$CURRENT"')
-                elif hasattr(action.type, '__completion__'):
-                    with writer.case(*map(quote, action.option_strings)):
-                        writer(action.type.__completion__)
-            with writer.case("*"):
-                writer.complete(
-                    *(
-                        option
-                        for action in actions
-                        for option in action.option_strings
-                        if option[0] not in parser.prefix_chars  # sub-command (prog option)
-                        or option[1] in parser.prefix_chars  # long-option (prog --option)
-                    ),
-                    word='"$CURRENT"',
-                )
+        all_options = [
+            option
+            for action in actions
+            for option in action.option_strings
+            if option.startswith(parser.prefix_chars * 2)  # only long ones
+        ]
+
+        writer.comment(f"auto-completion function for '{parser.prog}'")
+        writer.write('function _shell_complete_', get_prog(parser), '() {', sep="")
+        with writer.indent():
+            writer.write('local depth=$1')
+            writer.write('shift')
+            writer.write('local loop_count=0')
+            writer.write('local cur=${COMP_WORDS[$COMP_CWORD]}')
+            writer.write('')
+            writer.write('while [[ $# -gt 0 ]]; do')
+            with writer.indent():
+                writer.write('(( loop_count += 1 ))')
+                writer.write('if [ "$loop_count" -gt 10000 ]; then')
+                with writer.indent():
+                    writer.write(f'echo "Loop overflow for \'{parser.prog}\'"')
+                    writer.write('echo "depth=$depth with \'$*\'"')
+                    writer.write('break')
+                writer.write('fi')
+                writer.write()
+                writer.write('case $1 in')
+                with writer.indent():
+                    for action in actions:
+                        # noinspection PyProtectedMember,PyUnresolvedReferences
+                        if isinstance(action, ap_actions.SubParsersAction):
+                            # noinspection PyUnresolvedReferences
+                            for choice, subparser in action.choices.items():
+                                subparser: ap.ArgumentParser
+                                all_options.append(choice)
+                                parser_queue.append(subparser)
+
+                                writer.write(choice, ')', sep="")
+                                with writer.indent():
+                                    writer.write('(( depth += 1 )); shift')
+                                    writer.write('_shell_complete_', get_prog(subparser), ' "$depth" "$@"', sep="")
+                                    writer.write('break  # we should have our completion')
+                                writer.write(';;')
+                            continue
+
+                        if not action.option_strings:
+                            continue
+
+                        writer.write('|'.join(map(quote, action.option_strings)), ')', sep="")
+                        with writer.indent():
+                            writer.write('(( depth += 1 )); shift')
+                            if hasattr(action.type, '__completion__'):
+                                writer.write(action.type.__completion__)
+                            elif action.choices:
+                                writer.write('if [ "$depth" -eq "$COMP_CWORD" ]; then')
+                                with writer.indent():
+                                    writer.write(f'OPTIONS=({" ".join(map(quote, map(str, action.choices)))})')
+                                    writer.write('mapfile -t COMPREPLY < <(compgen -W "${OPTIONS[*]}" -- "$cur")')
+                                    writer.write('break  # we should have our completion')
+                                writer.write('fi')
+                                writer.write('(( depth += 1 )); shift')
+                            elif isinstance(action, HAVE_VALUE_ACTIONS):
+                                if isinstance(action.nargs, int) and action.nargs > 0:
+                                    writer.write(f'(( depth += {action.nargs} ))')
+                                    writer.write(f'shift {action.nargs}')
+                                else:
+                                    writer.write('(( depth += 1 )); shift')
+                            else:
+                                if isinstance(action.nargs, int) and action.nargs > 0:
+                                    writer.write(f'(( depth += {action.nargs} ))')
+                                    writer.write(f'shift {action.nargs}')
+                                elif isinstance(action, HAVE_VALUE_ACTIONS):
+                                    writer.write('(( depth += 1 )); shift')
+                                elif isinstance(action, HAVE_NO_VALUE_ACTIONS):
+                                    pass
+                                else:
+                                    writer.comment(f'Dunno how to complete: {action}')
+                        writer.write(';;')
+                    writer.write('*)')
+                    with writer.indent():
+                        writer.write('(( depth += 1 )); shift')
+                    writer.write(';;')
+                writer.write('esac')
+            writer.write('done')
+            writer.write()
+            writer.comment('if no completion is set yet')
+            writer.write('if [ ${#COMPREPLY} -eq 0 ]; then')
+            with writer.indent():
+                writer.write(f'OPTIONS=({" ".join(map(quote, all_options))})')
+                writer.write('mapfile -t COMPREPLY < <(compgen -W "${OPTIONS[*]}" -- "$cur")')
+            writer.write('fi')
+        writer.write('}')
+        writer.write()
+
+    # entry function -----------------------------------------------------------
+    writer.comment("entry point for bash-complete function")
+    writer.write('function _shell_complete_entry_', get_prog(root_parser), '() {', sep="")
+    with writer.indent():
+        writer.write('_shell_complete_', get_prog(root_parser), ' 0 "${COMP_WORDS[@]}"', sep="")
+    writer.write('}')
+    writer.write()
+
+    # zsh compatibility --------------------------------------------------------
+    writer.comment("complete is a bash builtin, but recent versions of ZSH come with a function called bashcompinit"
+                   " that will create a complete in ZSH. If the user is in ZSH, load and run bashcompinit before"
+                   " calling the complete function.")
+    writer.write('if [[ -n ${ZSH_VERSION-} ]]; then')
+    with writer.indent():
+        writer.write('autoload -U +X bashcompinit && bashcompinit')
+        writer.write('autoload -U +X compinit && compinit')
+    writer.write('fi')
+    writer.write()
+
+    # registering the completion -----------------------------------------------
+    writer.comment("registering the entry point")
+    writer.write('complete -F _shell_complete_entry_', get_prog(root_parser), ' ', root_parser.prog, sep="")
 
     return str(writer)
+
+
+def get_prog(parser: ap.ArgumentParser) -> str:
+    return re.sub(r'\W', '_', parser.prog)
