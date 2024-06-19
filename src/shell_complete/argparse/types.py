@@ -15,14 +15,17 @@ __all__ = [
 ]
 
 
-def associate(completion):
+def associate(completion: str):
     r"""
     association decorator
 
-    @associate(directory)
+    @associate(types.directory)
     def dir(value: str) -> pathlib.Path():
         return pathlib.Path(value)
     """
+    if hasattr(completion, '__completion__'):
+        completion = completion.__completion__
+
     def decorator(fn):
         fn.__completion__ = getattr(completion, '__completion__', completion)
         return fn
@@ -33,6 +36,8 @@ def associate(completion):
 def new_association(completion: str):
     r"""
     creates a new association
+
+    new_type = new_association("<shell-code>")
     """
     fn = lambda v: v  # noqa
     fn.__completion__ = getattr(completion, '__completion__', completion)
