@@ -12,10 +12,10 @@ from functools import cached_property
 from ..core import generate
 
 
-__all__ = ['ActionShellComplete']
+__all__ = ['ShellCompleteAction']
 
 
-class ActionShellComplete(ap.Action):
+class ShellCompleteAction(ap.Action):
     r"""
     $ myprog --completion [{print,install,uninstall}]
     """

@@ -5,12 +5,12 @@ r"""
 """
 import argparse as ap
 import sys
-from . import __description__, __version__, ActionShellComplete
+from . import __description__, __version__, ShellCompleteAction
 
 
 parser = ap.ArgumentParser(prog='shell-complete', description=__description__)
 parser.add_argument('-v', '--version', action='version', version=__version__)
-parser.add_argument('--completion', action=ActionShellComplete,
+parser.add_argument('--completion', action=ShellCompleteAction,
                     help="generate a shell-completion for this CLI")
 # parser.add_argument('--logging', choices=["DEBUG", "INFO", "WARN", "WARNING", "ERROR", "CRITICAL"])
 

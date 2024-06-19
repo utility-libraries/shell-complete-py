@@ -2,6 +2,6 @@
 r"""
 
 """
-from .action import ActionShellComplete
+from .action import ShellCompleteAction
 from .types import associate, new_association
 from . import types
