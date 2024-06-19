@@ -20,7 +20,7 @@ def associate(completion: str):
     association decorator
 
     @associate(types.directory)
-    def dir(value: str) -> pathlib.Path():
+    def dir(value: str) -> pathlib.Path:
         return pathlib.Path(value)
     """
     if hasattr(completion, '__completion__'):
@@ -63,4 +63,4 @@ service = new_association('_services')
 
 user_group = new_association('_usergroup -u')  # user:group
 user_at_host = new_association('_user_at_host')  # user@host
-known_hosts = new_association('_known_hosts_real -a "$CURRENT"')
+known_hosts = new_association('_known_hosts_real -a "$cur"')
