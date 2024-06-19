@@ -8,8 +8,12 @@ import fileinput
 import typing as t
 import os.path as p
 import argparse as ap
-from functools import cached_property
 from ..core import generate
+try:  # added in 3.8
+    from functools import cached_property
+except ImportError:
+    def cached_property(fn):
+        return property(fn)
 
 
 __all__ = ['ShellCompleteAction']
@@ -17,7 +21,7 @@ __all__ = ['ShellCompleteAction']
 
 class ShellCompleteAction(ap.Action):
     r"""
-    $ myprog --completion [{print,install,uninstall}]
+    $ myprog --completion
     """
     __parser: ap.ArgumentParser
 
