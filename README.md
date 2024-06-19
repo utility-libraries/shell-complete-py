@@ -4,6 +4,14 @@
 # shell-complete-py
 python package to generate shell-completion for your CLI
 
+<!--
+```shell
+$ shell-complete shell_complete.__main__:parser
+$ shell-complete <tab><tab>
+--completion  --help        --root        --version
+```
+-->
+
 ## Installation
 
 [![PyPI - Version](https://img.shields.io/pypi/v/shell-complete)](https://pypi.org/project/shell-complete/)
@@ -49,20 +57,17 @@ subcommand = subparsers.add_parser("sub")
 subcommand.add_argument('--hidden', types=types.ip_address)
 ```
 
-<!--
-
 You can also execute the module itself
 
 ```bash
-python3 -m shell_complete [args...]
+python3 -m shell_complete [--root ROOT] parser
 ```
 
 Or run the console-script
 
 ```bash
-shell-complete [args...]
+shell-complete [--root ROOT] parser
 ```
--->
 
 ## Support completion types
 
