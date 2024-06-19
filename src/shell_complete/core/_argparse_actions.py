@@ -17,15 +17,20 @@ from argparse import (
     _VersionAction as VersionAction,
     _SubParsersAction as SubParsersAction,
 )
-try:
+try:  # added in 3.9
     # noinspection PyUnresolvedReferences,PyProtectedMember
-    from argparse import _ExtendAction as ExtendAction, BooleanOptionalAction  # added in 3.9
+    from argparse import _ExtendAction as ExtendAction
 except ImportError:
     class ExtendAction:  # pseudo-class
         pass
-
+try:  # added in 3.9
+    from argparse import BooleanOptionalAction
+except ImportError:
     class BooleanOptionalAction:  # pseudo-class
         pass
+
+# noinspection PyProtectedMember
+ChoicesPseudoAction = SubParsersAction._ChoicesPseudoAction
 
 StoreAction: t.Type[Action]
 StoreConstAction: t.Type[Action]
@@ -37,4 +42,21 @@ CountAction: t.Type[Action]
 HelpAction: t.Type[Action]
 VersionAction: t.Type[Action]
 SubParsersAction: t.Type[Action]
+ChoicesPseudoAction: t.Type[Action]
 ExtendAction: t.Type[Action]
+
+__all__ = [
+    'StoreAction',
+    'StoreConstAction',
+    'StoreTrueAction',
+    'StoreFalseAction',
+    'AppendAction',
+    'AppendConstAction',
+    'CountAction',
+    'HelpAction',
+    'VersionAction',
+    'SubParsersAction',
+    'ChoicesPseudoAction',
+    'ExtendAction',
+    'BooleanOptionalAction',
+]
