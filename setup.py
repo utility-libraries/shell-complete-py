@@ -7,6 +7,13 @@ import sys; sys.path.append('./src')  # noqa
 import setuptools
 from shell_complete import __author__, __version__, __description__, __license__
 
+install_requires = []
+
+all_requires = []
+
+extras_require = {
+    'all': all_requires,
+}
 
 setuptools.setup(
     name="shell-complete",
@@ -39,7 +46,9 @@ setuptools.setup(
         "Programming Language :: Python :: 3.13",
         "Topic :: Utilities",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.7",
+    install_requires=install_requires,
+    extras_require=extras_require,
     # test_suite="tests",
     entry_points={
         "console_scripts": [
