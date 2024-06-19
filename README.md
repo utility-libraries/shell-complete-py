@@ -4,13 +4,15 @@
 # shell-complete-py
 python package to generate shell-completion for your CLI
 
-<!--
-```shell
-$ shell-complete shell_complete.__main__:parser
-$ shell-complete <tab><tab>
---completion  --help        --root        --version
-```
--->
+<!-- TOC -->
+* [shell-complete-py](#shell-complete-py)
+  * [Installation](#installation)
+  * [Quick-Start](#quick-start)
+    * [Installation](#installation-1)
+    * [Testing if everything works](#testing-if-everything-works)
+  * [Usage](#usage)
+  * [Support completion types](#support-completion-types)
+<!-- TOC -->
 
 ## Installation
 
@@ -20,6 +22,34 @@ $ shell-complete <tab><tab>
 pip3 install shell-complete
 ```
 
+## Quick-Start
+
+### Installation
+
+```shell
+pip3 install shell-complete
+```
+
+### Testing if everything works
+
+To test if the package was installed successfully
+
+```shell
+$ eval "$(shell-complete shell_complete.__main__:parser)"  # via CLI
+$ eval "$(shell-complete --completion)"  # via ShellCompleteAction
+$ shell-complete <tab><tab>
+--completion  --help        --root        --version
+$ shell-complete --root <tab><tab>
+dir/ .git/ .venv/  # example. this part will look different on your machine
+```
+
+or pipe it into a file and source that
+
+```shell
+$ shell-complete --completion > ./shell-complete.completion.bash
+$ source ./shell-complete.completion.bash
+```
+
 ## Usage
 
 Either import and use the `generate(parser: ArgumentParser)` function directly or add the `ShellCompleteAction` to your argparse.
@@ -27,7 +57,7 @@ Either import and use the `generate(parser: ArgumentParser)` function directly o
 ```python
 import pathlib
 from argparse import ArgumentParser
-from shell_complete import ShellCompleteAction, generate, types, associate
+from shell_complete import ShellCompleteAction, types, associate
 
 
 parser = ArgumentParser(prog="myprog")

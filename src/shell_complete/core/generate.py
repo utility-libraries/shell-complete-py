@@ -38,15 +38,16 @@ def generate(parser: ap.ArgumentParser) -> str:
         parser.description.strip(),
     )
     writer.write()
-    # prevent idiot execution --------------------------------------------------
-    writer.comment("prevent execution of this script as it has to be sourced")
-    writer.write('if ! [[ -n $ZSH_VERSION && $ZSH_EVAL_CONTEXT =~ :file$ ]] \\\n'
-                 '   || [[ -n $BASH_VERSION ]] && ! (return 0 2>/dev/null); then')
-    with writer.indent():
-        writer.write('echo "\'source ${BASH_SOURCE[0]}\' is the correct usage"')
-        writer.write('exit 1')
-    writer.write('fi')
-    writer.write()
+    # this prevents 'eval "$(foo --completion)"' execution
+    # # prevent idiot execution --------------------------------------------------
+    # writer.comment("prevent execution of this script as it has to be sourced")
+    # writer.write('if ! [[ -n $ZSH_VERSION && $ZSH_EVAL_CONTEXT =~ :file$ ]] \\\n'
+    #              '   || [[ -n $BASH_VERSION ]] && ! (return 0 2>/dev/null); then')
+    # with writer.indent():
+    #     writer.write('echo "\'source ${BASH_SOURCE[0]}\' is the correct usage"')
+    #     writer.write('exit 1')
+    # writer.write('fi')
+    # writer.write()
     # only completion if command exist -----------------------------------------
     writer.comment("only register autocompletion if the command actually exists")
     writer.comment("or source with 'FORCE_COMPLETION= source ${BASH_SOURCE[0]}'")
