@@ -2,7 +2,7 @@
 r"""
 MIT License
 
-Copyright (c) 2023 PlayerG9
+Copyright (c) 2024 Utility-Libraries
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,9 +29,9 @@ __credits__ = ["PlayerG9"]
 __license__ = "MIT"
 __maintainer__ = "PlayerG9"
 __email__ = None
-__status__ = "Prototype"  # Prototype, Development, Production
+__status__ = "Development"  # Prototype, Development, Production
 __description__ = "python package to generate shell-completion for your CLI"
-__version_info__ = (0, 0, 0)
+__version_info__ = (0, 1, 0)
 __version__ = '.'.join(map(str, __version_info__))
 
 from .core import *
