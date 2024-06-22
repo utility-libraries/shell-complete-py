@@ -4,16 +4,19 @@ r"""
 """
 import sys
 import shlex
+import typing as t
 from ..core.imbued import ImbuedCode
 
 
-__all__ = ['ShellCode', 'Recommended', 'PythonCode']
+__all__ = ['Recommended', 'ShellCode', 'ShellCommand', 'PythonCode']
 
 
 class Recommended(ImbuedCode):
     r"""
     recommends some options.
     similar to settings choices (argparse.ArgumentParser.add_argument(choices=)) but does not change your parser
+
+    >>> parser.add_argument(...).completer = Recommended(1, 2, 3)
     """
 
     def __init__(self, *options):
@@ -38,13 +41,49 @@ class ShellCode(ImbuedCode):
         return self.code
 
 
+class ShellCommand(ImbuedCode):
+    r"""
+    code for a shell-command that generates the completion which gets imbued into the completion-file.
+
+    >>> parser.add_argument(...).completer = ShellCommand(..., "command | formatter")
+    >>> parser.add_argument(...).completer = ShellCommand("command", "--option")
+    >>> parser.add_argument(...).completer = ShellCommand(["command", "--option"])
+    """
+
+    BEAUTIFY = False
+
+    SHELL_CODE_TEMPLATE = r"""
+    STROPTIONS="$({command})"
+    mapfile -t COMPREPLY < <(compgen -W "$STROPTIONS" -- "$cur")
+    """
+
+    @t.overload
+    def __init__(self, marker: Ellipsis, command: str): ...
+    @t.overload
+    def __init__(self, command: t.List[str]): ...
+    @t.overload
+    def __init__(self, *command: str): ...
+
+    def __init__(self, *args):
+        if len(args) == 2 and args[0] is ... and isinstance(args[1], str):
+            self.command = shlex.split(args[0])
+        elif len(args) == 1 and isinstance(args[0], (tuple, list)):
+            self.command = args[0]
+        else:
+            self.command = args
+
+    def __str__(self) -> str:
+        command = shlex.join(self.command)
+        return self.SHELL_CODE_TEMPLATE.format(command=command)
+
+
 class PythonCode(ImbuedCode):
     r"""
-    wrapper for python code that should be imbued into the completion-file.
+    wrapper for python code that generates the completion which gets imbued into the completion-file.
 
-    parser.add_argument(...).completer = PythonCode(r'''
-    compreply([1, 2, 3])
-    ''')
+    >>> parser.add_argument(...).completer = PythonCode(r'''
+    >>> compreply([1, 2, 3])
+    >>> ''')
     """
 
     BEAUTIFY = False
