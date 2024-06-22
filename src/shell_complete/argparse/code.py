@@ -64,15 +64,14 @@ class ShellCommand(ImbuedCode):
 
     def __init__(self, *args):
         if len(args) == 2 and args[0] is ... and isinstance(args[1], str):
-            self.command = shlex.split(args[1])
+            self.command = args[1]
         elif len(args) == 1 and isinstance(args[0], (tuple, list)):
-            self.command = args[0]
+            self.command = shlex.join(args[0])
         else:
-            self.command = args
+            self.command = shlex.join(args)
 
     def __str__(self) -> str:
-        command = shlex.join(self.command)
-        return self.SHELL_CODE_TEMPLATE.format(command=command)
+        return self.SHELL_CODE_TEMPLATE.format(command=self.command)
 
 
 class PythonCode(ImbuedCode):
