@@ -50,8 +50,6 @@ class ShellCommand(ImbuedCode):
     >>> parser.add_argument(...).completer = ShellCommand(["command", "--option"])
     """
 
-    BEAUTIFY = False
-
     SHELL_CODE_TEMPLATE = r"""
     STROPTIONS="$({command})"
     mapfile -t COMPREPLY < <(compgen -W "$STROPTIONS" -- "$cur")
