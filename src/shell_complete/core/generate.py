@@ -5,10 +5,11 @@ r"""
 import re
 import typing as t
 import argparse as ap
-from shlex import quote
+from shlex import quote, join
 from .writing import ShellWriter
 from .. import __version__
 from . import _argparse_actions as ap_actions
+from .imbued import ImbuedCode
 
 
 __all__ = ['generate']
@@ -123,12 +124,13 @@ def generate(parser: ap.ArgumentParser) -> str:
                         writer.write('|'.join(map(quote, action.option_strings)), ')', sep="")
                         with writer.indent():
                             writer.write('(( depth += 1 )); shift')
-                            if hasattr(action.type, '__completion__'):
-                                writer.write(action.type.__completion__)
+                            if has_completer(action):
+                                completer = get_completer(action)
+                                writer.write_block(str(completer), indent=completer.BEAUTIFY)
                             elif action.choices:
                                 writer.write('if [ "$depth" -eq "$COMP_CWORD" ]; then')
                                 with writer.indent():
-                                    writer.write(f'OPTIONS=({" ".join(map(quote, map(str, action.choices)))})')
+                                    writer.write(f'OPTIONS=({join(map(str, action.choices))})')
                                     writer.write('mapfile -t COMPREPLY < <(compgen -W "${OPTIONS[*]}" -- "$cur")')
                                     writer.write('break  # we should have our completion')
                                 writer.write('fi')
@@ -163,10 +165,10 @@ def generate(parser: ap.ArgumentParser) -> str:
                 pfx = quote(parser.prefix_chars)
                 writer.write(f'if [[ "$cur" == "{pfx}" ]]; then')
                 with writer.indent():
-                    writer.write(f'OPTIONS=({" ".join(map(quote, sorted(short_options)))})')
+                    writer.write(f'OPTIONS=({join(sorted(short_options))})')
                 writer.write('else')
                 with writer.indent():
-                    writer.write(f'OPTIONS=({" ".join(map(quote, sorted(long_options | subcommands)))})')
+                    writer.write(f'OPTIONS=({join(sorted(long_options | subcommands))})')
                 writer.write('fi')
                 writer.write('mapfile -t COMPREPLY < <(compgen -W "${OPTIONS[*]}" -- "$cur")')
             writer.write('fi')
@@ -197,6 +199,20 @@ def generate(parser: ap.ArgumentParser) -> str:
     writer.write('complete -F _shell_complete_entry_', get_prog(root_parser), ' ', quote(root_parser.prog), sep="")
 
     return str(writer)
+
+
+def has_completer(action: ap.Action) -> bool:
+    return hasattr(action, 'completer') or hasattr(action.type, '__completer__')
+
+
+def get_completer(action: ap.Action) -> ImbuedCode:
+    completer = getattr(action, 'completer')
+    if completer is None:
+        completer = getattr(action.type, '__completer__')
+    if not isinstance(completer, ImbuedCode):
+        if not isinstance(completer, ImbuedCode):
+            raise TypeError(f'completer type must be a subclass of ImbuedCode ({action})')
+    return completer
 
 
 def get_prog(parser: ap.ArgumentParser) -> str:
