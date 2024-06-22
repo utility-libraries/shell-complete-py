@@ -3,6 +3,7 @@ r"""
 
 """
 import re
+import typing as t
 import argparse as ap
 from shlex import quote
 from .writing import ShellWriter
@@ -64,12 +65,19 @@ def generate(parser: ap.ArgumentParser) -> str:
         # noinspection PyProtectedMember
         actions = parser._actions
 
-        all_options = [
+        long_options: t.Set[str] = set(
             option
             for action in actions
             for option in action.option_strings
             if option.startswith(parser.prefix_chars * 2)  # only long ones
-        ]
+        )
+        short_options: t.Set[str] = set(
+            option
+            for action in actions
+            for option in action.option_strings
+            if option.startswith(parser.prefix_chars) and option not in long_options
+        )
+        subcommands: t.Set[str] = set()
 
         writer.comment(f"auto-completion function for '{parser.prog}'")
         writer.write('function _shell_complete_', get_prog(parser), '() {', sep="")
@@ -81,11 +89,12 @@ def generate(parser: ap.ArgumentParser) -> str:
             writer.write('')
             writer.write('while [[ $# -gt 0 ]]; do')
             with writer.indent():
+                writer.comment("security protocol to prevent an infinite loop")
                 writer.write('(( loop_count += 1 ))')
                 writer.write('if [ "$loop_count" -gt 10000 ]; then')
                 with writer.indent():
-                    writer.write(f'echo "Loop overflow for \'{parser.prog}\'"')
-                    writer.write('echo "depth=$depth with \'$*\'"')
+                    writer.write(f'>&2 echo "Loop overflow for \'{parser.prog}\'"')
+                    writer.write(f'>&2 echo "depth=$depth with \'$*\'"')
                     writer.write('break')
                 writer.write('fi')
                 writer.write()
@@ -97,7 +106,7 @@ def generate(parser: ap.ArgumentParser) -> str:
                             # noinspection PyUnresolvedReferences
                             for choice, subparser in action.choices.items():
                                 subparser: ap.ArgumentParser
-                                all_options.append(choice)
+                                subcommands.add(choice)
                                 parser_queue.append(subparser)
 
                                 writer.write(choice, ')', sep="")
@@ -151,7 +160,14 @@ def generate(parser: ap.ArgumentParser) -> str:
             writer.comment('if no completion is set yet')
             writer.write('if [ ${#COMPREPLY} -eq 0 ]; then')
             with writer.indent():
-                writer.write(f'OPTIONS=({" ".join(map(quote, all_options))})')
+                pfx = quote(parser.prefix_chars)
+                writer.write(f'if [[ "$cur" == "{pfx}" ]]; then')
+                with writer.indent():
+                    writer.write(f'OPTIONS=({" ".join(map(quote, sorted(short_options)))})')
+                writer.write('else')
+                with writer.indent():
+                    writer.write(f'OPTIONS=({" ".join(map(quote, sorted(long_options | subcommands)))})')
+                writer.write('fi')
                 writer.write('mapfile -t COMPREPLY < <(compgen -W "${OPTIONS[*]}" -- "$cur")')
             writer.write('fi')
         writer.write('}')
