@@ -64,7 +64,7 @@ class ShellCommand(ImbuedCode):
 
     def __init__(self, *args):
         if len(args) == 2 and args[0] is ... and isinstance(args[1], str):
-            self.command = shlex.split(args[0])
+            self.command = shlex.split(args[1])
         elif len(args) == 1 and isinstance(args[0], (tuple, list)):
             self.command = args[0]
         else:
