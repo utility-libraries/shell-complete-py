@@ -126,7 +126,10 @@ def generate(parser: ap.ArgumentParser) -> str:
                             writer.write('(( depth += 1 )); shift')
                             if has_completer(action):
                                 completer = get_completer(action)
-                                writer.write_block(str(completer), indent=completer.BEAUTIFY)
+                                writer.write('if [ "$depth" -eq "$COMP_CWORD" ]; then')
+                                with writer.indent():
+                                    writer.write_block(str(completer), indent=completer.BEAUTIFY)
+                                writer.write('fi')
                             elif action.choices:
                                 writer.write('if [ "$depth" -eq "$COMP_CWORD" ]; then')
                                 with writer.indent():

@@ -21,7 +21,7 @@ class Recommended(ImbuedCode):
 
     def __str__(self) -> str:
         return fr"""
-        OPTIONS=({shlex.join(self.options)})
+        OPTIONS=({shlex.join(map(str, self.options))})
         mapfile -t COMPREPLY < <(compgen -W "${{OPTIONS[*]}}" -- "$cur")
         """
 
@@ -41,6 +41,10 @@ class ShellCode(ImbuedCode):
 class PythonCode(ImbuedCode):
     r"""
     wrapper for python code that should be imbued into the completion-file.
+
+    parser.add_argument(...).completer = PythonCode(r'''
+    compreply([1, 2, 3])
+    ''')
     """
 
     BEAUTIFY = False
