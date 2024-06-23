@@ -245,16 +245,15 @@ def generate(parser: ap.ArgumentParser) -> str:
 
 
 def has_completer(action: ap.Action) -> bool:
-    return hasattr(action, 'completer') or hasattr(action.type, '__completer__')
+    return getattr(action, 'completer', None) or getattr(action.type, '__completer__', None)
 
 
 def get_completer(action: ap.Action) -> ImbuedCode:
-    completer = getattr(action, 'completer')
+    completer = getattr(action, 'completer', None)
     if completer is None:
-        completer = getattr(action.type, '__completer__')
+        completer = getattr(action.type, '__completer__', None)
     if not isinstance(completer, ImbuedCode):
-        if not isinstance(completer, ImbuedCode):
-            raise TypeError(f'completer type must be a subclass of ImbuedCode ({action})')
+        raise TypeError(f'completer type must be a subclass of ImbuedCode (got {completer!r}) ({action!r})')
     return completer
 
 
