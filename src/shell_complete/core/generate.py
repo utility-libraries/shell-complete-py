@@ -5,7 +5,7 @@ r"""
 import re
 import typing as t
 import argparse as ap
-from shlex import quote, join
+from shlex import quote
 from .writing import ShellWriter
 from .. import __version__
 from . import _argparse_actions as ap_actions
@@ -208,10 +208,10 @@ def generate(parser: ap.ArgumentParser) -> str:
             with writer.indent():
                 writer.write(f'if [[ "$cur" = "{quote(parser.prefix_chars)}" ]]; then')
                 with writer.indent():
-                    writer.write(f'OPTIONS=({join(sorted(short_options))})')
+                    writer.write(f'OPTIONS=({" ".join(map(quote, (sorted(short_options))))})')
                 writer.write('else')
                 with writer.indent():
-                    writer.write(f'OPTIONS=({join(sorted(long_options | subcommands))})')
+                    writer.write(f'OPTIONS=({" ".join(map(quote, (sorted(long_options | subcommands))))})')
                 writer.write('fi')
                 writer.write('mapfile -t COMPREPLY < <(compgen -W "${OPTIONS[*]}" -- "$cur")')
             writer.write('fi')

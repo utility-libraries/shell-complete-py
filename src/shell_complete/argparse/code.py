@@ -24,7 +24,7 @@ class Recommended(ImbuedCode):
 
     def __str__(self) -> str:
         return fr"""
-        OPTIONS=({shlex.join(map(str, self.options))})
+        OPTIONS=({" ".join(map(shlex.quote, map(str, self.options)))})
         mapfile -t COMPREPLY < <(compgen -W "${{OPTIONS[*]}}" -- "$cur")
         """
 
@@ -66,9 +66,9 @@ class ShellCommand(ImbuedCode):
         if len(args) == 2 and args[0] is ... and isinstance(args[1], str):
             self.command = args[1]
         elif len(args) == 1 and isinstance(args[0], (tuple, list)):
-            self.command = shlex.join(args[0])
+            self.command = " ".join(map(shlex.quote, args[0]))
         else:
-            self.command = shlex.join(args)
+            self.command = " ".join(map(shlex.quote, args))
 
     def __str__(self) -> str:
         return self.SHELL_CODE_TEMPLATE.format(command=self.command)
@@ -93,7 +93,7 @@ class PythonCode(ImbuedCode):
     PYTHON_CODE_HEAD = r"""
     def compreply(options):
         import shlex
-        print(shlex.join(map(str, options)))
+        print(" ".join(map(shlex.quote, map(str, options))))
 
     """
 
@@ -105,6 +105,6 @@ class PythonCode(ImbuedCode):
         python = self.python or sys.executable
         code = self.PYTHON_CODE_HEAD + self.code
 
-        pycommand = shlex.join([python, '-B', '-O', '-X', 'utf8', '-c', code])
+        pycommand = " ".join(map(shlex.quote, [python, '-B', '-O', '-X', 'utf8', '-c', code]))
 
         return self.SHELL_CODE_TEMPLATE.format(command=pycommand)
