@@ -69,13 +69,13 @@ def generate(parser: ap.ArgumentParser) -> str:
         positionals: t.List[ap.Action] = []
         optionals: t.List[ap.Action] = []
         subparser_action: t.Optional[ap_actions.SubParsersAction] = None
-        for action in all_actions:
-            if isinstance(action, ap_actions.SubParsersAction):
-                subparser_action = action
-            elif action.option_strings:  # only optionals have option_strings
-                optionals.append(action)
+        for optional in all_actions:
+            if isinstance(optional, ap_actions.SubParsersAction):
+                subparser_action = optional
+            elif optional.option_strings:  # only optionals have option_strings
+                optionals.append(optional)
             else:
-                positionals.append(action)
+                positionals.append(optional)
 
         long_options: t.Set[str] = set(
             option
@@ -99,37 +99,37 @@ def generate(parser: ap.ArgumentParser) -> str:
             # noinspection PyUnresolvedReferences
             subcommands = set(subparser_action.choices.keys())
 
-        def add_completion_for_action(actionx: ap.Action):
-            if hasattr(actionx.type, '__completion__'):
+        def add_completion_for_action(action: ap.Action):
+            if hasattr(action.type, '__completion__'):
                 writer.write('if [[ "$depth" -eq "$COMP_CWORD" ]]; then')
                 with writer.indent():
-                    writer.write(actionx.type.__completion__)
+                    writer.write(action.type.__completion__)
                     writer.write('completed=true; break  # we should have our completion')
                 writer.write('fi')
-            elif actionx.choices:
+            elif action.choices:
                 writer.write('if [[ "$depth" -eq "$COMP_CWORD" ]]; then')
                 with writer.indent():
-                    writer.write(f'OPTIONS=({" ".join(map(quote, map(str, actionx.choices)))})')
+                    writer.write(f'OPTIONS=({" ".join(map(quote, map(str, action.choices)))})')
                     writer.write('mapfile -t COMPREPLY < <(compgen -W "${OPTIONS[*]}" -- "$cur")')
                     writer.write('completed=true; break')
                 writer.write('fi')
                 writer.write('(( depth += 1 )); shift')
-            elif isinstance(actionx, HAVE_VALUE_ACTIONS):
-                if isinstance(actionx.nargs, int) and actionx.nargs > 0:
-                    writer.write(f'(( depth += {actionx.nargs} ))')
-                    writer.write(f'shift {actionx.nargs}')
+            elif isinstance(action, HAVE_VALUE_ACTIONS):
+                if isinstance(action.nargs, int) and action.nargs > 0:
+                    writer.write(f'(( depth += {action.nargs} ))')
+                    writer.write(f'shift {action.nargs}')
                 else:
                     writer.write('(( depth += 1 )); shift')
             else:
-                if isinstance(actionx.nargs, int) and actionx.nargs > 0:
-                    writer.write(f'(( depth += {actionx.nargs} ))')
-                    writer.write(f'shift {actionx.nargs}')
-                elif isinstance(actionx, HAVE_VALUE_ACTIONS):
+                if isinstance(action.nargs, int) and action.nargs > 0:
+                    writer.write(f'(( depth += {action.nargs} ))')
+                    writer.write(f'shift {action.nargs}')
+                elif isinstance(action, HAVE_VALUE_ACTIONS):
                     writer.write('(( depth += 1 )); shift')
-                elif isinstance(actionx, HAVE_NO_VALUE_ACTIONS):
+                elif isinstance(action, HAVE_NO_VALUE_ACTIONS):
                     pass  # yes. do nothing
                 else:
-                    writer.comment(f'Dunno how to complete: {actionx}')
+                    writer.comment(f'Dunno how to complete: {action}')
 
         writer.comment(f"auto-completion function for '{parser.prog}'")
         writer.write('function _shell_complete_', get_prog(parser), '() {', sep="")
@@ -155,11 +155,11 @@ def generate(parser: ap.ArgumentParser) -> str:
                 writer.write('case $1 in')
                 with writer.indent():
                     # optionals ------------------------------------------------------------------------------------
-                    for action in optionals:
-                        writer.write('|'.join(map(quote, action.option_strings)), ')', sep="")
+                    for optional in optionals:
+                        writer.write('|'.join(map(quote, optional.option_strings)), ')', sep="")
                         with writer.indent():
                             writer.write('(( depth += 1 )); shift')
-                            add_completion_for_action(action)
+                            add_completion_for_action(optional)
                         writer.write(';;')
 
                     # subparser/subcommands ------------------------------------------------------------------------
