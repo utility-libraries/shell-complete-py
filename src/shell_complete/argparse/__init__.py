@@ -3,5 +3,6 @@ r"""
 
 """
 from .action import ShellCompleteAction
-from .types import associate, new_association
+from .code import *
+from .types import associate, new_pseudo_type
 from . import types

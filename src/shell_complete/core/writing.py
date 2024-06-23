@@ -28,6 +28,12 @@ class ShellWriter:
         tail = end
         self._stream.write(head + body + tail)
 
+    def write_block(self, block: str, indent: bool = True) -> None:
+        body = textwrap.dedent(block).strip()
+        if indent:
+            body = textwrap.indent(body, '  ' * self._indentation)
+        self._stream.write(body + '\n')
+
     @contextmanager
     def indent(self) -> t.ContextManager:
         self._indentation += 1
