@@ -79,13 +79,13 @@ def generate(parser: ap.ArgumentParser) -> str:
 
         long_options: t.Set[str] = set(
             option
-            for action in all_actions
+            for action in optionals
             for option in action.option_strings
             if option.startswith(parser.prefix_chars * 2)  # only long ones
         )
         short_options: t.Set[str] = set(
             option
-            for action in all_actions
+            for action in optionals
             for option in action.option_strings
             if option.startswith(parser.prefix_chars)
             and option not in long_options
