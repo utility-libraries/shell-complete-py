@@ -31,7 +31,7 @@ __maintainer__ = "PlayerG9"
 __email__ = None
 __status__ = "Development"  # Prototype, Development, Production
 __description__ = "python package to generate shell-completion for your CLI"
-__version_info__ = (0, 3, 0)
+__version_info__ = (0, 4, 0)
 __version__ = '.'.join(map(str, __version_info__))
 
 from .core import *
