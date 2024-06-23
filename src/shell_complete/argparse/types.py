@@ -30,7 +30,7 @@ def associate(completer, to=None):
         completer = completer.__completer__
 
     def decorator(fn):
-        fn.__completion__ = completer
+        fn.__completer__ = completer
         return fn
 
     if to:
