@@ -100,20 +100,20 @@ def generate(parser: ap.ArgumentParser) -> str:
             # noinspection PyUnresolvedReferences
             subcommands = set(subparser_action.choices.keys())
 
-        def add_completion_for_action(action: ap.Action):
+        def add_completion_for_action(*, action: ap.Action, mark_completed: bool):
             if has_completer(action):
                 completer = get_completer(action)
                 writer.write('if [[ "$depth" -eq "$COMP_CWORD" ]]; then')
                 with writer.indent():
                     writer.write_block(str(completer), indent=completer.BEAUTIFY)
-                    writer.write('completed=true; break  # we should have our completion')
+                    writer.write('completed=true; break' if mark_completed else 'break')
                 writer.write('fi')
             elif action.choices:
                 writer.write('if [[ "$depth" -eq "$COMP_CWORD" ]]; then')
                 with writer.indent():
                     writer.write(f'OPTIONS=({" ".join(map(quote, map(str, action.choices)))})')
                     writer.write('mapfile -t COMPREPLY < <(compgen -W "${OPTIONS[*]}" -- "$cur")')
-                    writer.write('completed=true; break')
+                    writer.write('completed=true; break' if mark_completed else 'break')
                 writer.write('fi')
                 writer.write('(( depth += 1 )); shift')
             elif isinstance(action, HAVE_VALUE_ACTIONS):
@@ -131,7 +131,7 @@ def generate(parser: ap.ArgumentParser) -> str:
                 elif isinstance(action, HAVE_NO_VALUE_ACTIONS):
                     pass  # yes. do nothing
                 else:
-                    writer.comment(f'Dunno how to complete: {action}')
+                    writer.comment(f'No Idea how to complete: {action}')
 
         writer.comment(f"auto-completion function for '{parser.prog}'")
         writer.write('function _shell_complete_', get_prog(parser), '() {', sep="")
@@ -161,7 +161,7 @@ def generate(parser: ap.ArgumentParser) -> str:
                         writer.write('|'.join(map(quote, optional.option_strings)), ')', sep="")
                         with writer.indent():
                             writer.write('(( depth += 1 )); shift')
-                            add_completion_for_action(optional)
+                            add_completion_for_action(action=optional, mark_completed=True)
                         writer.write(';;')
 
                     # subparser/subcommands ------------------------------------------------------------------------
@@ -184,18 +184,18 @@ def generate(parser: ap.ArgumentParser) -> str:
                             if positional.nargs in {ap.ZERO_OR_MORE, ap.ONE_OR_MORE}:
                                 writer.write(f'if [[ "$positional" -ge {i} ]]; then')
                                 with writer.indent():
-                                    add_completion_for_action(positional)
+                                    add_completion_for_action(action=positional, mark_completed=False)
                                 writer.write('fi')
                             elif isinstance(positional.nargs, int):
                                 writer.write(f'if [[ "$positional" -ge {i}'
                                              f' && "$positional" -lt {i + positional.nargs} ]]; then')
                                 with writer.indent():
-                                    add_completion_for_action(positional)
+                                    add_completion_for_action(action=positional, mark_completed=False)
                                 writer.write('fi')
                             else:
                                 writer.write(f'if [[ "$positional" -eq {i} ]]; then')
                                 with writer.indent():
-                                    add_completion_for_action(positional)
+                                    add_completion_for_action(action=positional, mark_completed=False)
                                 writer.write('fi')
                         writer.write('(( positional += 1 ))')
                         writer.write('(( depth += 1 )); shift')
@@ -213,7 +213,7 @@ def generate(parser: ap.ArgumentParser) -> str:
                 with writer.indent():
                     writer.write(f'OPTIONS=({" ".join(map(quote, (sorted(long_options | subcommands))))})')
                 writer.write('fi')
-                writer.write('mapfile -t COMPREPLY < <(compgen -W "${OPTIONS[*]}" -- "$cur")')
+                writer.write('mapfile -t COMPREPLY < <(compgen -W "${COMPREPLY[*]} ${OPTIONS[*]}" -- "$cur")')
             writer.write('fi')
         writer.write('}')
         writer.write()
