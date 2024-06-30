@@ -52,7 +52,7 @@ def generate(parser: ap.ArgumentParser) -> str:
     # writer.write()
     # only completion if command exist -----------------------------------------
     writer.comment("only register autocompletion if the command actually exists")
-    writer.comment("or source with 'FORCE_COMPLETION= source ${BASH_SOURCE[0]}'")
+    writer.comment("or load with 'FORCE_COMPLETION=' existing")
     writer.write('if [[ -z ${FORCE_COMPLETION+x} ]] && ! command -v', quote(root_parser.prog), '&> /dev/null; then')
     with writer.indent():
         writer.write('return')
