@@ -8,7 +8,20 @@ import typing as t
 from ..core.imbued import ImbuedCode
 
 
-__all__ = ['Recommended', 'ShellCode', 'ShellCommand', 'PythonCode']
+__all__ = ['NoCompletion', 'Recommended', 'ShellCode', 'ShellCommand', 'PythonCode']
+
+
+class NoCompletion(ImbuedCode):
+    r"""
+    don't add any completion
+
+    note: if it's positional you still get completion of optionals
+
+    >>> parser.add_argument(...).completer = NoCompletion()
+    """
+
+    def __str__(self) -> str:
+        return "COMPREPLY=()"
 
 
 class Recommended(ImbuedCode):
